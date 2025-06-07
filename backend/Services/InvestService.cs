@@ -45,6 +45,7 @@ namespace InvestApp.Services
             {
                 AtivoId = p.AtivoId,
                 Codigo = p.Codigo,
+                Nome = p.Nome,
                 QuantidadeLiquida = p.QuantidadeLiquida,
                 PrecoMedio = p.PrecoMedio,
                 PrecoAtual = p.PrecoAtual

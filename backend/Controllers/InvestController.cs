@@ -287,4 +287,85 @@ public class InvestController : ControllerBase
         await _investService.InserirOperacaoAsync(operacao);
         return Ok(new { mensagem = "Operação criada com sucesso!" });
     }
+
+    [HttpGet("usuario/{usuarioId}/historicoIndicadores")]
+    public async Task<IActionResult> GetHistoricoIndicadores(int usuarioId)
+    {
+        // Busca todas as operações do usuário
+        var operacoes = await _investService.GetOperacoesPorUsuarioAsync(usuarioId);
+        if (operacoes == null || !operacoes.Any())
+            return Ok(new List<object>());
+
+        // Busca todas as datas de operação
+        var datas = operacoes.Select(o => o.DataHora.Date).Distinct().OrderBy(d => d).ToList();
+        var historico = new List<object>();
+        decimal custoTotal = 0;
+        decimal pnL = 0;
+        decimal corretagemAcumulada = 0;
+        foreach (var data in datas)
+        {
+            // Filtra operações até a data
+            var opsAteData = operacoes.Where(o => o.DataHora.Date <= data).ToList();
+            custoTotal = opsAteData.Sum(o => o.TipoOperacao == "COMPRA" ? o.Quantidade * o.PrecoUnitario : 0);
+            decimal valorMercado = 0;
+            foreach (var op in opsAteData)
+            {
+                // Busca cotação mais recente até a data
+                var cotacao = await _investService.GetUltimaCotacaoAteDataAsync(op.AtivoId, data);
+                if (cotacao.HasValue)
+                    valorMercado += op.Quantidade * cotacao.Value * (op.TipoOperacao == "COMPRA" ? 1 : -1);
+            }
+            pnL = valorMercado - custoTotal;
+            corretagemAcumulada = opsAteData.Sum(o => o.Corretagem);
+            historico.Add(new {
+                data = data.ToString("yyyy-MM-dd"),
+                custoTotal,
+                pnL,
+                corretagem = corretagemAcumulada
+            });
+        }
+        return Ok(historico);
+    }
+
+    [HttpGet("precosTempoReal")]
+    public IActionResult GetPrecosTempoReal()
+    {
+        // Mock de preços em tempo real
+        var precos = new[]
+        {
+            new { logo = "/itau.png", nome = "Itaú SA", codigo = "ITUB4", preco = 10.85m, variacao = -0.85m },
+            new { logo = "/petrobras.png", nome = "PETR4", codigo = "PETR4", preco = 29.45m, variacao = 8.65m },
+            new { logo = "/vale.png", nome = "Vale", codigo = "VALE3", preco = 53.12m, variacao = -0.03m },
+            new { logo = "/ambev.png", nome = "ambev", codigo = "ABEV3", preco = 13.88m, variacao = 0.03m },
+            new { logo = "/magalu.png", nome = "MGLU3", codigo = "MGLU3", preco = 10.29m, variacao = 0.01m }
+        };
+        return Ok(precos);
+    }
+
+    [HttpGet("usuario/{usuarioId}/precosTempoReal")]
+    public async Task<IActionResult> GetPrecosTempoRealUsuario(int usuarioId)
+    {
+        var posicoes = await _investService.GetPosicaoPorPapelAsync(usuarioId);
+        var hoje = DateTime.Today;
+        var ontem = hoje.AddDays(-1);
+        var precos = new List<object>();
+        foreach (var pos in posicoes)
+        {
+            // Buscar cotação de hoje e de ontem
+            var cotacoes = await _investService.GetCotacoesPorAtivoAsync(pos.AtivoId);
+            var cotacaoHoje = cotacoes.OrderByDescending(c => c.DataHora).FirstOrDefault(c => c.DataHora.Date == hoje)?.PrecoUnitario ?? pos.PrecoAtual;
+            var cotacaoOntem = cotacoes.OrderByDescending(c => c.DataHora).FirstOrDefault(c => c.DataHora.Date == ontem)?.PrecoUnitario;
+            decimal variacao = 0;
+            if (cotacaoOntem.HasValue && cotacaoOntem.Value != 0)
+                variacao = cotacaoHoje - cotacaoOntem.Value;
+            precos.Add(new {
+                id = pos.AtivoId,
+                codigo = pos.Codigo,
+                nome = pos.Nome,
+                preco = cotacaoHoje,
+                variacao
+            });
+        }
+        return Ok(precos);
+    }
 } 

@@ -15,6 +15,9 @@ import {
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, LineChart, Line, YAxis, CartesianGrid, Legend } from "recharts";
 import { LineChart as MiniLineChart, Line as MiniLine, ResponsiveContainer as MiniResponsiveContainer, Tooltip as MiniTooltip } from "recharts";
+import { useHistoricoIndicadores } from "@/hooks/useHistoricoIndicadores";
+import { useEffect, useState } from "react";
+import Modal from "@/components/Modal";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -30,6 +33,18 @@ export default function DashboardPage() {
   const [nomeUsuario, setNomeUsuario] = React.useState<string>("");
   const [lastUpdate, setLastUpdate] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const { historico: historicoIndicadores } = useHistoricoIndicadores(usuarioId);
+  const [precosTempoReal, setPrecosTempoReal] = useState<any[]>([]);
+  const [modalAtivo, setModalAtivo] = useState<any | null>(null);
+  const [periodo, setPeriodo] = useState<string>("30d");
+  const [cotacoes, setCotacoes] = useState<any[]>([]);
+  const periodos = [
+    { label: "Hoje", value: "1d" },
+    { label: "7 dias", value: "7d" },
+    { label: "30 dias", value: "30d" },
+    { label: "1 ano", value: "1y" },
+    { label: "5 anos", value: "5y" }
+  ];
 
   React.useEffect(() => {
     let id = usuarioId;
@@ -72,6 +87,38 @@ export default function DashboardPage() {
   React.useEffect(() => {
     setLastUpdate(new Date());
   }, [totalInvestido, posicaoPorPapel, posicaoGlobal, totalCorretagem]);
+
+  useEffect(() => {
+    if (!usuarioId || isNaN(usuarioId)) return;
+    api.get(`/invest/usuario/${usuarioId}/precosTempoReal`)
+      .then(res => setPrecosTempoReal(res.data))
+      .catch(() => setPrecosTempoReal([]));
+  }, [usuarioId]);
+
+  useEffect(() => {
+    if (modalAtivo) {
+      console.log('modalAtivo:', modalAtivo);
+      api.get(`/invest/ativo/${modalAtivo.id}/cotacoes`).then(res => {
+        console.log('Dados da API:', res.data);
+        let dados = res.data || [];
+        // Filtrar por período
+        const hoje = new Date();
+        let dataLimite = new Date();
+        if (periodo === "1d") dataLimite.setDate(hoje.getDate() - 1);
+        if (periodo === "7d") dataLimite.setDate(hoje.getDate() - 7);
+        if (periodo === "30d") dataLimite.setDate(hoje.getDate() - 30);
+        if (periodo === "1y") dataLimite.setFullYear(hoje.getFullYear() - 1);
+        if (periodo === "5y") dataLimite.setFullYear(hoje.getFullYear() - 5);
+        dados = dados.filter((c: any) => new Date(c.dataHora) >= dataLimite);
+        const cotacoesMapeadas = dados.map((c: any) => ({
+          data: new Date(c.dataHora).toLocaleDateString("pt-BR"),
+          preco: c.precoUnitario
+        }));
+        console.log('Cotacoes para o gráfico:', cotacoesMapeadas);
+        setCotacoes(cotacoesMapeadas);
+      });
+    }
+  }, [modalAtivo, periodo]);
 
   if (loading) {
     return (
@@ -142,7 +189,7 @@ export default function DashboardPage() {
       {/* Conteúdo principal: cards, tabela e gráficos */}
       <div className="pt-28 pb-10 max-w-7xl mx-auto px-4">
         {/* Cards de totais */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center border-t-4 border-[#004080] w-full">
             <span className="text-gray-500 text-lg mb-2">Carteira Atual</span>
             <span className="text-3xl font-bold text-[#FF6600]">{posicaoGlobal ? posicaoGlobal.valorMercado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}</span>
@@ -162,8 +209,8 @@ export default function DashboardPage() {
             {/* Sparkline */}
             <div className="w-full h-10 mt-2">
               <MiniResponsiveContainer width="100%" height="100%">
-                <MiniLineChart data={historicoCarteira.slice(-7)}>
-                  <MiniLine type="monotone" dataKey="valor" stroke="#004080" strokeWidth={2} dot={false} />
+                <MiniLineChart data={historicoIndicadores.slice(-7)}>
+                  <MiniLine type="monotone" dataKey="custoTotal" stroke="#004080" strokeWidth={2} dot={false} />
                   <MiniTooltip formatter={(val:number) => val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} labelFormatter={d => `Dia: ${d}`} />
                 </MiniLineChart>
               </MiniResponsiveContainer>
@@ -175,8 +222,21 @@ export default function DashboardPage() {
             {/* Sparkline */}
             <div className="w-full h-10 mt-2">
               <MiniResponsiveContainer width="100%" height="100%">
-                <MiniLineChart data={historicoCarteira.slice(-7)}>
-                  <MiniLine type="monotone" dataKey="valor" stroke={posicaoGlobal && posicaoGlobal.pnL >= 0 ? "#16a34a" : "#dc2626"} strokeWidth={2} dot={false} />
+                <MiniLineChart data={historicoIndicadores.slice(-7)}>
+                  <MiniLine type="monotone" dataKey="pnL" stroke={posicaoGlobal && posicaoGlobal.pnL >= 0 ? "#16a34a" : "#dc2626"} strokeWidth={2} dot={false} />
+                  <MiniTooltip formatter={(val:number) => val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} labelFormatter={d => `Dia: ${d}`} />
+                </MiniLineChart>
+              </MiniResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center border-t-4 border-[#00C49F] w-full">
+            <span className="text-gray-500 text-lg mb-2">Total Corretagem</span>
+            <span className="text-3xl font-bold text-[#00C49F]">{totalCorretagem ? totalCorretagem.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}</span>
+            {/* Sparkline */}
+            <div className="w-full h-10 mt-2">
+              <MiniResponsiveContainer width="100%" height="100%">
+                <MiniLineChart data={historicoIndicadores.slice(-7)}>
+                  <MiniLine type="monotone" dataKey="corretagem" stroke="#00C49F" strokeWidth={2} dot={false} />
                   <MiniTooltip formatter={(val:number) => val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} labelFormatter={d => `Dia: ${d}`} />
                 </MiniLineChart>
               </MiniResponsiveContainer>
@@ -195,7 +255,7 @@ export default function DashboardPage() {
           {/* Tabela de operações */}
           <div className="bg-white rounded-2xl shadow-md p-8">
             <h3 className="text-xl font-semibold text-[#004080] mb-4">Operações</h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" style={{ maxHeight: 320, overflowY: 'auto' }}>
               <table className="min-w-full text-base">
                 <thead>
                   <tr className="bg-[#F5F5F5] text-[#004080]">
@@ -227,6 +287,54 @@ export default function DashboardPage() {
               <div className="flex justify-end mt-2">
                 <NavLink to={`/operacoes?usuarioId=${usuarioId}`} className="text-[#004080] hover:underline text-sm font-medium">Ver todas →</NavLink>
               </div>
+            )}
+            {/* Tabela de Preços em Tempo Real */}
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold text-[#004080] mb-4">Preços em Tempo Real</h3>
+              <table className="min-w-full text-base rounded-xl overflow-hidden">
+                <thead>
+                  <tr className="bg-[#F5F5F5] text-[#004080]">
+                    <th className="px-4 py-2 text-left">Ativo</th>
+                    <th className="px-4 py-2 text-left">Código</th>
+                    <th className="px-4 py-2 text-right">Últ. Preço</th>
+                    <th className="px-4 py-2 text-right">Variação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {precosTempoReal.map((item, idx) => (
+                    <tr key={item.codigo} className="even:bg-gray-100 cursor-pointer hover:bg-blue-50" onClick={() => setModalAtivo(item)}>
+                      <td className="px-4 py-2 font-semibold">{item.nome}</td>
+                      <td className="px-4 py-2">{item.codigo}</td>
+                      <td className="px-4 py-2 text-right">{item.preco?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
+                      <td className={`px-4 py-2 text-right font-semibold ${item.variacao > 0 ? "text-green-600" : item.variacao < 0 ? "text-red-600" : "text-gray-600"}`}>
+                        {item.variacao > 0 ? "+" : ""}{item.variacao?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Modal do gráfico de evolução */}
+            {modalAtivo && (
+              <Modal isOpen={!!modalAtivo} onClose={() => setModalAtivo(null)}>
+                <div className="p-4 w-full max-w-xl">
+                  <h2 className="text-xl font-bold mb-2 text-[#004080]">Evolução de {modalAtivo.nome} ({modalAtivo.codigo})</h2>
+                  <div className="mb-4">
+                    <select value={periodo} onChange={e => setPeriodo(e.target.value)} className="border rounded p-2">
+                      {periodos.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={cotacoes} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="data" />
+                      <YAxis tickFormatter={v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} width={80} />
+                      <Tooltip formatter={(val: number) => val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} labelFormatter={d => `Data: ${d}`} />
+                      <Line type="monotone" dataKey="preco" stroke="#004080" strokeWidth={3} dot={false} name="Preço" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Modal>
             )}
           </div>
           {/* Gráficos */}
