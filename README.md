@@ -1,107 +1,123 @@
-# InvestApp
+# Desafio Técnico Itaú – InvestApp
 
-## Estrutura do Repositório
+## Contexto
+Renda variável é uma modalidade de investimento em que os retornos não são fixos ou previsíveis, como ocorre na renda fixa. A principal característica desse tipo de investimento é a possibilidade de ganhos (ou perdas) conforme as oscilações do mercado. Exemplos: ações, FIIs, ETFs. Este projeto simula um sistema completo de controle de investimentos, com foco em performance, resiliência, testes e documentação.
 
-- backend/: projeto .NET 6 com Dapper e MySQL
-- frontend/: projeto React + Vite + TypeScript + Tailwind CSS
+## Glossário
+- **Ativo:** Item negociável no mercado financeiro (ex: ITSA3, KDIF11).Add commentMore actions
+- **Preço:** Determinado por oferta e demanda.
+- **Bolsa de Valores:** Ambiente de negociação (ex: B3).
+- **Volatilidade:** Variação dos preços de um ativo.
+- **Dividendos/JSP:** Lucro distribuído aos acionistas/cotistas.
+- **Preço Médio:** Média ponderada dos preços das operações, descontando dividendos.
+- **P&L:** Lucro/Prejuízo do cliente (Profit & Loss).
+- **Tipo Operação:** Compra ou Venda.
+- **Corretagem:** Valor pago à corretora por intermediar operações.
 
-## Pré‐requisitos
+  ## O que foi desenvolvido
+Este repositório contém uma solução completa para o desafio, cobrindo todos os tópicos propostos:
 
-- .NET 6.0 SDK ou superior instalado
-- Node.js 16+ e npm instalados
-- MySQL Server rodando
-- Crie o schema e tabelas executando o arquivo `schema.sql` (localizado em backend/ ou na raiz, conforme for criado).
+### 1. Modelagem de Banco Relacional
+- Script SQL em `Documentacao_Geral/modelagem_investdb.sql`.
+- Justificativa dos tipos de dados em `Documentacao_Geral/Modelagem_BD.txt`.Add commentMore actions
 
-## Configurar o Banco de Dados
+### 2. Índices e Performance
+- Proposta de índices e consulta otimizada documentadas.
+- Estrutura para atualização de posição baseada em cotação.
 
-1. Executar no MySQL:
-```sql
-CREATE DATABASE IF NOT EXISTS investdb;
-USE investdb;
--- comando(s) para criar tabelas e inserir dados de teste
+### 3. Aplicação
+- Backend em .NET (C#) com Dapper e arquitetura limpa.
+- Frontend em React + Vite (opcional, para visualização e experiência completa).
+- Separação clara de responsabilidades, uso de async/await.
+
+### 4. Lógica de Negócio – Preço Médio
+- Método robusto para cálculo do preço médio ponderado, com tratamento de entradas inválidas.
+
+### 5. Testes Unitários
+- Testes positivos e negativos com xUnit e Moq.
+- Estrutura clara, isolada e de fácil manutenção.
+
+  
+### 6. Testes Mutantes
+- Explicação do conceito, exemplos práticos e documentação em `Documentacao_Geral/Testes_Mutantes.md`.
+
+### 7. Integração entre Sistemas
+- Worker Service .NET para consumir cotações via Kafka, com retry e idempotência.
+- Código e configuração em `InvestApp.KafkaWorker/`.
+
+### 8. Engenharia do Caos
+- Circuit breaker, fallback e observabilidade implementados com Polly.
+- Logs detalhados e fallback para última cotação local.
+
+### 9. Escalabilidade e PerformanceAdd commentMore actions
+- Documentação sobre auto-scaling horizontal e balanceamento de carga em `Documentacao_Geral/Escalabilidade_e_Performance.md`.
+
+### 10. Documentação e APIs
+- APIs RESTful para todas as operações do desafio.
+- Documentação OpenAPI 3.0 em `Documentacao_Geral/OpenAPI_investapp.yaml`.
+- Exemplos de endpoints, parâmetros e respostas.
+
+## Estrutura do Projeto
 ```
+InvestApp/Add commentMore actions
+│
+├── backend/                # Backend .NET (APIs, serviços, controllers)
+│   ├── Controllers/        # Controllers REST
+│   ├── Services/           # Lógica de negócio, resiliência, integração
+│   ├── Models/             # Modelos de dados
+│   ├── Data/               # Acesso a banco de dados
+│   └── ...
+│
+├── frontend/               # Frontend React + Vite (opcional)
+│   └── ...
+│
+├── InvestApp.KafkaWorker/  # Worker Service .NET para Kafka
+│   ├── Worker.cs           # Consumo Kafka, retry, idempotência
+│   └── ...
+│
+├── Documentacao_Geral/     # Toda a documentação do projeto
+│   ├── OpenAPI_investapp.yaml         # Documentação OpenAPI 3.0 dos endpoints
+│   ├── Modelagem_BD.txt               # Explicação da modelagem do banco
+│   ├── modelagem_investdb.sql         # Script SQL do banco
+│   ├── Testes_Mutantes.md             # Explicação e exemplos de testes mutantes
+│   ├── Resumo_Testes.md               # Resumo dos testes automatizados
+│   ├── Detalhes_Implementacao.md      # Detalhes técnicos e sugestões
+│   ├── Resultados_Testes.md           # Resultados e cobertura dos testes
+│   ├── Escalabilidade_e_Performance.md# Estratégias de auto-scaling e balanceamento
+│   └── README.md                      # (Opcional) Índice da documentação
+│
+└── README.md               # Este arquivo, visão geral do projeto
 
-2. Criar usuário `KaiqueSuzart` e conceder privilégios:
-```sql
-CREATE USER IF NOT EXISTS 'KaiqueSuzart'@'localhost' IDENTIFIED BY 'SenhaProjeto2025';
-GRANT ALL PRIVILEGES ON investdb.* TO 'KaiqueSuzart'@'localhost';
-FLUSH PRIVILEGES;
-```
+  
 
-## Executar o Backend
+ ## Como rodar o projeto
+1. **Banco de Dados:**
+   - Execute o script `Documentacao_Geral/modelagem_investdb.sql` no MySQL.Add commentMore actions
+2. **Backend:**
+   - Ajuste as strings de conexão em `backend/appsettings.json`.
+   - Rode com `dotnet run --project backend`.
+3. **Frontend (opcional):**
+   - Instale dependências com `npm install`.
+   - Rode com `npm run dev`.
+4. **Worker Kafka:**
+   - Configure Kafka e banco em `InvestApp.KafkaWorker/appsettings.json`.
+   - Rode com `dotnet run --project InvestApp.KafkaWorker`.
 
-```bash
-cd InvestApp/backend
-dotnet restore
-dotnet run
-```
+## Onde está cada documentação
+- **Modelagem de banco:** `Documentacao_Geral/modelagem_investdb.sql`, `Documentacao_Geral/Modelagem_BD.txt`
+- **Testes e resultados:** `Documentacao_Geral/Resumo_Testes.md`, `Documentacao_Geral/Resultados_Testes.md`
+- **Testes mutantes:** `Documentacao_Geral/Testes_Mutantes.md`
+- **Escalabilidade e performance:** `Documentacao_Geral/Escalabilidade_e_Performance.md`Add commentMore actions
+- **APIs RESTful:** `Documentacao_Geral/OpenAPI_investapp.yaml`
+- **Detalhes técnicos:** `Documentacao_Geral/Detalhes_Implementacao.md`
 
-O backend rodará em http://localhost:5000.
 
-CORS está habilitado para http://localhost:5173.
+## Observações Finais
+- O projeto foi desenvolvido com foco em clareza, qualidade, criatividade e performance, conforme orientações do desafio.
+- Todos os pontos do enunciado foram implementados e documentados.
+- O uso de IA foi feito para acelerar e garantir qualidade, sempre com revisão crítica e adaptação ao contexto do Itaú.
 
-## Executar o Frontend
 
-```bash
-cd InvestApp/frontend
-npm install
-npm run dev
-```
+**Obrigado pela oportunidade!**
 
-O Vite rodará em http://localhost:5173.
-
-As requisições para /api/... serão automaticamente proxied para http://localhost:5000/api.
-
-## Testar a Aplicação
-
-1. Abra http://localhost:5173 no navegador.
-2. Digite um ID de usuário válido (por ex. 1) e clique em "Entrar".
-3. Você será navegádo para /dashboard?usuarioId=<ID>.
-
-O dashboard irá buscar e exibir:
-- Total Investido por Ativo
-- Posição por Papel
-- Posição Global (Valor de Mercado, Custo Total, P&L)
-- Total de Corretagem
-
-## Estrutura de Pastas Resumida
-
-```
-InvestApp/
-├─ backend/
-│   ├─ Controllers/
-│   ├─ Data/
-│   ├─ Models/
-│   ├─ Services/
-│   ├─ InvestApp.csproj
-│   └─ Program.cs
-├─ frontend/
-│   ├─ public/
-│   │   └─ index.html
-│   ├─ src/
-│   │   ├─ assets/
-│   │   ├─ components/
-│   │   ├─ hooks/
-│   │   ├─ pages/
-│   │   ├─ services/
-│   │   │   └─ api.ts
-│   │   ├─ styles/
-│   │   │   └─ index.css
-│   │   ├─ App.tsx
-│   │   └─ main.tsx
-│   ├─ package.json
-│   ├─ tsconfig.json
-│   ├─ vite.config.ts
-│   └─ tailwind.config.js
-├─ README.md
-└─ .gitignore
-```
-
-## Novidades Técnicas
-
-- Correção do cálculo do valor da carteira ao longo do tempo: agora o último ponto do gráfico reflete exatamente o valor da carteira atual, utilizando as cotações mais recentes disponíveis para cada ativo.
-- Implementação de preenchimento automático de cotações históricas para todos os dias úteis, utilizando a última cotação conhecida para cada ativo, garantindo precisão no histórico da carteira.
-- Ajustes na API para garantir consistência entre o valor exibido nos cards de totais e o valor apresentado no gráfico de evolução da carteira.
-- Integração com a API Alpha Vantage para obtenção de cotações de ativos em tempo real.
-- Melhoria na estrutura do backend, eliminando duplicidade de classes e métodos, tornando o código mais limpo e eficiente.
-- Garantia de atualização dos dados em tempo real no frontend, refletindo imediatamente as operações e cotações mais recentes. 
+> _Autor: Kaique Suzart_ 
