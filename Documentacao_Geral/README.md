@@ -1,3 +1,16 @@
+# Documentação Geral - InvestApp
+
+Este diretório reúne toda a documentação técnica e de testes do projeto InvestApp. Abaixo, um resumo de cada arquivo para facilitar a navegação:
+
+- **Detalhes_Implementacao.md**: Estrutura, padrões e exemplos dos testes automatizados.
+- **Modelagem_BD.txt**: Explicação textual da modelagem do banco de dados.
+- **modelagem_investdb.sql**: Script SQL para criação das tabelas do banco.
+- **Resumo_Testes.md**: Resumo dos principais testes unitários implementados.
+- **Resultados_Testes.md**: Resultados reais da execução dos testes e análise de cobertura.
+- **Testes_Mutantes.md**: Conceito, exemplos e análise de testes mutantes aplicados ao projeto.
+
+Consulte cada arquivo para detalhes completos sobre implementação, testes e modelagem do sistema.
+
 # InvestApp.KafkaWorker
 
 Este Worker Service .NET consome cotações de um tópico Kafka e salva no banco de dados MySQL, garantindo retry e idempotência.
