@@ -1,6 +1,13 @@
 # InvestApp.Tests.temp
 
-Este é um projeto temporário de testes que contém experimentos e testes em desenvolvimento.
+Esta pasta contém testes temporários, experimentais ou de validação rápida para o sistema InvestApp. Os testes aqui não fazem parte da suíte oficial, mas servem para validar hipóteses, testar integrações ou cenários específicos durante o desenvolvimento.
+
+## Quando usar
+- Testes rápidos de novas funcionalidades
+- Prototipagem de cenários
+- Validação de integrações
+
+Os testes definitivos devem ser migrados para a suíte oficial de testes automatizados.
 
 ## Propósito
 
@@ -13,8 +20,6 @@ Este projeto foi criado para:
 ## Observações Importantes
 
 - Este é um projeto temporário e experimental
-- Os testes aqui não são parte da suíte principal
-- Pode conter código incompleto ou em desenvolvimento
 - Não deve ser usado em produção
 
 ## Estrutura
