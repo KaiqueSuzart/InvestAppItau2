@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-itau-gray font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-itau-orange hover:bg-[#e65c00] text-white font-semibold py-2 px-4 rounded-md transition;
+  }
+  
+  .btn-secondary {
+    @apply bg-itau-blue2 hover:bg-[#005bb5] text-white font-semibold py-2 px-4 rounded-md transition;
+  }
+
+  .input-default {
+    @apply border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:border-itau-blue focus:ring-1 focus:ring-itau-blue transition;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md p-5;
+  }
+} 

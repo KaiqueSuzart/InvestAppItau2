@@ -1,0 +1,82 @@
+# Modelagem do Banco de Dados - investdb
+
+Abaixo está a explicação da modelagem do banco de dados conforme as tabelas e colunas apresentadas nas imagens:
+
+---
+
+## 1. usuarios
+- **id**: Identificador único do usuário (chave primária).
+- **nome**: Nome do usuário.
+- **email**: E-mail do usuário (deve ser único).
+- **perc_corretagem**: Percentual de corretagem cobrado do usuário.
+- **senha**: Senha para autenticação.
+
+**Justificativa:**
+- O campo `perc_corretagem` é decimal para permitir valores percentuais com precisão.
+- O campo `email` é único para evitar duplicidade de usuários.
+
+---
+
+## 2. ativos
+- **id**: Identificador único do ativo (chave primária).
+- **codigo**: Código do ativo (ex: PETR4).
+- **nome**: Nome do ativo.
+- **preco_atual**: Preço atual do ativo.
+
+**Justificativa:**
+- O campo `codigo` é único para garantir identificação do ativo.
+- O campo `preco_atual` facilita consultas rápidas sem precisar buscar na tabela de cotações.
+
+---
+
+## 3. operacoes
+- **id**: Identificador único da operação (chave primária).
+- **usuario_id**: Referência ao usuário (chave estrangeira).
+- **ativo_id**: Referência ao ativo (chave estrangeira).
+- **quantidade**: Quantidade negociada.
+- **preco_unitario**: Preço unitário da operação.
+- **tipo_operacao**: Tipo da operação (COMPRA/VENDA).
+- **corretagem**: Valor da corretagem cobrada.
+- **data_hora**: Data e hora da operação.
+
+**Justificativa:**
+- O campo `tipo_operacao` pode ser ENUM para garantir integridade.
+- Chaves estrangeiras garantem integridade referencial.
+
+---
+
+## 4. cotacoes
+- **id**: Identificador único da cotação (chave primária).
+- **ativo_id**: Referência ao ativo (chave estrangeira).
+- **preco_unitario**: Preço unitário cotado.
+- **data_hora**: Data e hora da cotação.
+
+**Justificativa:**
+- Permite histórico de preços dos ativos ao longo do tempo.
+
+---
+
+## 5. posicoes
+- **id**: Identificador único da posição (chave primária).
+- **usuario_id**: Referência ao usuário (chave estrangeira).
+- **ativo_id**: Referência ao ativo (chave estrangeira).
+- **ticker**: Código do ativo.
+- **quantidade_liquida**: Quantidade líquida do ativo na carteira do usuário.
+- **preco_medio**: Preço médio de aquisição.
+- **valor_mercado**: Valor de mercado da posição.
+- **pnl**: Lucro ou prejuízo (Profit and Loss).
+- **ultima_atualizacao**: Data/hora da última atualização da posição.
+
+**Justificativa:**
+- Permite consultas rápidas sobre a posição consolidada do usuário.
+- O campo `ticker` facilita a identificação textual do ativo.
+- O campo `ultima_atualizacao` permite saber quando a posição foi recalculada.
+
+---
+
+## Observações Gerais
+- Todos os campos de valores financeiros usam DECIMAL para garantir precisão.
+- Chaves estrangeiras garantem integridade entre as tabelas.
+- A modelagem permite consultas eficientes e mantém o histórico de operações e cotações.
+
+Se precisar de exemplos de consultas SQL ou mais detalhes sobre relacionamentos, posso complementar este documento! 
